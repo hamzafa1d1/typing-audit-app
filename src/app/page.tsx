@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
@@ -55,6 +56,51 @@ export default function Home() {
             </Button>
           </div>
         </motion.div>
+
+        {/* DEMO SCREENSHOTS */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="relative py-12 sm:py-16 md:py-20"
+        >
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute left-1/2 top-8 h-40 w-40 -translate-x-1/2 rounded-full bg-emerald-400/15 blur-3xl" />
+            <div className="absolute right-6 top-28 h-48 w-48 rounded-full bg-indigo-400/10 blur-3xl" />
+          </div>
+          <div className="mx-auto max-w-2xl px-1 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+              A calm, real-time cockpit.
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+              See what Typerr looks like in the wild, from live audit signals to KPI momentum.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-6 md:mt-14 md:grid-cols-2 md:gap-8">
+            <div className="group relative overflow-hidden rounded-3xl border border-border bg-card/60 p-3 shadow-[0_15px_60px_rgba(15,23,42,0.12)] transition-transform duration-500 hover:-translate-y-1 dark:bg-neutral-900/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <Image
+                src="/demo-app-live.png"
+                alt="Live typing audit dashboard showing real-time speed and status"
+                width={2120}
+                height={1486}
+                className="h-auto w-full rounded-2xl"
+                priority
+              />
+            </div>
+            <div className="group relative overflow-hidden rounded-3xl border border-border bg-card/60 p-3 shadow-[0_15px_60px_rgba(15,23,42,0.12)] transition-transform duration-500 hover:-translate-y-1 dark:bg-neutral-900/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <Image
+                src="/demo-app-dashboard.png"
+                alt="KPI momentum and feedback hub cards from the Typerr dashboard"
+                width={2130}
+                height={1494}
+                className="h-auto w-full rounded-2xl"
+              />
+            </div>
+          </div>
+        </motion.section>
 
         {/* BENTO GRID (FEATURES) */}
         <div className="py-16 sm:py-24 md:py-32">
