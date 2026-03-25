@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const manrope = Manrope({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -12,13 +12,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Typerr | Master the keyboard without opening an app",
-  description: "Typerr is a desktop app that runs in the background to improve your English typing and vocabulary through real-time interception and audits. Passive improvement while you actually work.",
+  title: "Typerr | Real-Time Typing Coach for Speed and Accuracy",
+  description: "Track typing live, detect recurring mistakes, and get AI-guided drills and checklists. Download Typerr for macOS, Windows, and Linux.",
   keywords: [
-    "Passive typing tutor",
-    "Real-time typing audit",
-    "Improve typing speed while working",
-    "Desktop typing assistant"
+    "typing speed app",
+    "typing accuracy app",
+    "typing coach desktop",
+    "keyboard typing analytics"
   ]
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground antialiased`}>
+      <body className={`${manrope.className} bg-background text-foreground antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
