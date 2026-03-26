@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,6 +18,7 @@ import {
   AlertTriangle,
   Apple,
   CheckCircle2,
+  ChevronDown,
   Download,
   Gauge,
   Keyboard,
@@ -24,6 +26,7 @@ import {
   LineChart,
   ListChecks,
   LockKeyhole,
+  Menu,
   Monitor,
   ShieldCheck,
   Sparkles,
@@ -31,6 +34,7 @@ import {
   TrendingUp,
   ArrowRight,
   ChevronRight,
+  X,
 } from "lucide-react";
 
 const downloads = [
@@ -100,6 +104,49 @@ const stepFlow = [
   },
 ];
 
+const problems = [
+  {
+    title: "You type all day with zero feedback",
+    body: "No tool tells you your real WPM, correction rate, or rhythm during actual work — only synthetic tests that don't reflect reality.",
+  },
+  {
+    title: "You repeat the same typos forever",
+    body: "Without a mistake log you never know which words trip you up most, or how often. The same errors compound silently.",
+  },
+  {
+    title: "Speed tests don't translate to real work",
+    body: "Copying pangrams measures copying. It doesn't capture how you type emails, code, documents, or messages under real pressure.",
+  },
+];
+
+function WpmCounter() {
+  const n = useCounter(18);
+  return <>{n}+</>;
+}
+
+function MistakeCounter() {
+  const n = useCounter(73);
+  return <>{n}%</>;
+}
+
+function useCounter(target: number, duration = 1200) {
+  const [count, setCount] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const start = Date.now();
+    const tick = () => {
+      const progress = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return count;
+}
+
 const releaseFallback = "https://github.com/hamzafa1d1/typerr-desktop-app/releases/latest";
 
 const releaseDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -111,7 +158,16 @@ const releaseDateFormatter = new Intl.DateTimeFormat("en-US", {
 
 export default function Home() {
   const year = new Date().getFullYear();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [releaseLinks, setReleaseLinks] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const [releaseMeta, setReleaseMeta] = useState<{
     version: string | null;
     tagName: string | null;
@@ -179,9 +235,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-sky-300/40 dark:selection:bg-sky-500/30">
-      <div className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(circle_at_10%_0%,rgba(56,189,248,0.15),transparent_35%),radial-gradient(circle_at_90%_10%,rgba(14,165,233,0.14),transparent_35%),linear-gradient(to_bottom,rgba(255,255,255,0),rgba(2,6,23,0.03))] dark:bg-[radial-gradient(circle_at_10%_0%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_90%_10%,rgba(14,165,233,0.2),transparent_35%),linear-gradient(to_bottom,rgba(2,6,23,0),rgba(2,6,23,0.5))]" />
+      {/* Background: radial glows */}
+      <div className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(ellipse_80%_50%_at_-10%_-10%,rgba(56,189,248,0.18),transparent),radial-gradient(ellipse_60%_40%_at_110%_-5%,rgba(14,165,233,0.16),transparent),radial-gradient(ellipse_50%_60%_at_50%_100%,rgba(34,211,238,0.08),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_-10%_-10%,rgba(56,189,248,0.22),transparent),radial-gradient(ellipse_60%_40%_at_110%_-5%,rgba(14,165,233,0.2),transparent),radial-gradient(ellipse_50%_60%_at_50%_100%,rgba(34,211,238,0.1),transparent),linear-gradient(to_bottom,transparent,rgba(2,6,23,0.6))]" />
+      {/* Background: dot grid */}
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-[0.025] dark:opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-2xl">
+      <header className={`sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-2xl transition-shadow duration-200 ${scrolled ? "shadow-sm" : ""}`}>
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#" className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500/25 to-cyan-400/15 text-sky-700 ring-1 ring-sky-500/20 dark:text-sky-300">
@@ -197,14 +256,39 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              className="h-8 bg-sky-600 px-3 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400"
-              render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
+              className="hidden h-8 bg-sky-600 px-3 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400 sm:inline-flex"
+              nativeButton={false} render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
             >
               Download
             </Button>
             <ModeToggle />
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:hidden"
+              aria-label="Toggle navigation"
+              onClick={() => setMobileNavOpen((v) => !v)}
+            >
+              {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
         </div>
+        {/* Mobile nav drawer */}
+        {mobileNavOpen && (
+          <div className="border-t border-border/60 bg-background/95 px-4 pb-4 pt-3 md:hidden">
+            <nav className="flex flex-col gap-3 text-sm text-muted-foreground">
+              <a href="#features" onClick={() => setMobileNavOpen(false)} className="transition-colors hover:text-foreground">Features</a>
+              <a href="#privacy" onClick={() => setMobileNavOpen(false)} className="transition-colors hover:text-foreground">Privacy</a>
+              <a href="#downloads" onClick={() => setMobileNavOpen(false)} className="transition-colors hover:text-foreground">Downloads</a>
+              <Button
+                size="sm"
+                className="mt-1 h-9 w-full bg-sky-600 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400"
+                nativeButton={false} render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
+              >
+                <Download className="h-4 w-4" />
+                Download for macOS
+              </Button>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pb-24 sm:pt-14">
@@ -218,21 +302,39 @@ export default function Home() {
               Real-time typing coach for desktop
             </Badge>
             <h1 className="max-w-2xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              Typing coaching that works while you work.
+              Typing coaching that{" "}
+              <span className="bg-gradient-to-r from-sky-500 via-cyan-400 to-sky-400 bg-clip-text text-transparent">
+                works while you work.
+              </span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
               Typerr turns live typing behavior into KPI clarity, mistake intelligence, and AI-guided practice plans so speed and accuracy improve together.
             </p>
+            <div className="mt-5 flex items-center gap-6 text-sm">
+              <div>
+                <span className="text-2xl font-semibold tabular-nums text-foreground">
+                  <WpmCounter />
+                </span>
+                <span className="ml-1 text-xs text-muted-foreground">avg WPM gain</span>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div>
+                <span className="text-2xl font-semibold tabular-nums text-foreground">
+                  <MistakeCounter />
+                </span>
+                <span className="ml-1 text-xs text-muted-foreground">fewer repeated mistakes</span>
+              </div>
+            </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 size="lg"
                 className="h-11 bg-sky-600 px-5 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400"
-                render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
+                nativeButton={false} render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
               >
                 <Apple className="h-4 w-4" />
                 Download for macOS
               </Button>
-              <Button size="lg" variant="outline" className="h-11 px-5" render={<a href="#walkthrough" />}>
+              <Button size="lg" variant="outline" className="h-11 px-5" nativeButton={false} render={<a href="#walkthrough" />}>
                 See it in action
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -250,43 +352,99 @@ export default function Home() {
             transition={{ duration: 0.45, delay: 0.1 }}
             className="relative"
           >
-            <div className="absolute -left-8 -top-8 h-28 w-28 rounded-full bg-sky-500/20 blur-3xl" />
-            <div className="absolute -bottom-10 -right-8 h-32 w-32 rounded-full bg-cyan-500/20 blur-3xl" />
-            <Card className="overflow-hidden rounded-2xl border border-border/70 bg-card/90 p-3 shadow-[0_28px_80px_rgba(2,6,23,0.2)]">
-              <div className="rounded-xl border border-border/70 bg-background/80 p-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium">Live Dashboard</p>
-                  <Badge variant="outline" className="border-sky-500/30 text-sky-700 dark:text-sky-300">Tracking: Live</Badge>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-3">
-                    <p className="text-xs text-muted-foreground">Session Avg WPM</p>
-                    <p className="mt-1 text-2xl font-semibold tracking-tight">87</p>
-                  </div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-3">
-                    <p className="text-xs text-muted-foreground">Corrections/min</p>
-                    <p className="mt-1 text-2xl font-semibold tracking-tight">2.4</p>
-                  </div>
-                </div>
-                <div className="mt-3 rounded-lg border border-border/70 bg-background/80 p-3">
-                  <p className="text-xs text-muted-foreground">Top mistakes</p>
-                  <div className="mt-2 space-y-1 text-sm">
-                    <div className="flex items-center justify-between"><span>definately -&gt; definitely</span><span className="text-muted-foreground">93%</span></div>
-                    <div className="flex items-center justify-between"><span>adress -&gt; address</span><span className="text-muted-foreground">88%</span></div>
-                  </div>
+            {/* Glow blobs */}
+            <div className="absolute -left-8 -top-8 h-40 w-40 rounded-full bg-sky-500/25 blur-3xl" />
+            <div className="absolute -bottom-10 -right-8 h-44 w-44 rounded-full bg-cyan-500/25 blur-3xl" />
+
+            {/* macOS-style app window frame */}
+            <div className="relative overflow-hidden rounded-2xl border border-border/60 shadow-[0_32px_96px_rgba(2,6,23,0.28)] dark:shadow-[0_32px_96px_rgba(0,0,0,0.5)]">
+              {/* Title bar */}
+              <div className="flex items-center gap-2 border-b border-border/60 bg-zinc-100 px-4 py-2.5 dark:bg-zinc-900">
+                <div className="h-3 w-3 rounded-full bg-red-400" />
+                <div className="h-3 w-3 rounded-full bg-amber-400" />
+                <div className="h-3 w-3 rounded-full bg-green-400" />
+                <span className="ml-3 text-xs text-muted-foreground">Typerr — Live Dashboard</span>
+                <div className="ml-auto">
+                  <Badge variant="outline" className="border-sky-500/30 text-sky-700 dark:text-sky-300 h-4 text-[10px]">● Live</Badge>
                 </div>
               </div>
-            </Card>
-            <Card className="absolute -bottom-4 -left-4 hidden w-52 rounded-xl border-sky-500/30 bg-background/90 p-0 shadow-lg backdrop-blur md:block">
-              <CardContent className="space-y-1 p-3 text-xs">
-                <p className="font-medium">Tracking status</p>
-                <p className="text-2xl font-semibold tracking-tight text-sky-700 dark:text-sky-300">Live</p>
-                <p className="text-muted-foreground">Corrections/min: 2.4</p>
-              </CardContent>
-            </Card>
+              {/* Screenshot */}
+              <Image
+                src="/demo-app-live.png"
+                alt="Typerr live typing dashboard showing WPM, corrections, and mistake patterns"
+                width={680}
+                height={460}
+                className="w-full"
+                priority
+              />
+            </div>
+
+            {/* Floating stat badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+              className="absolute -bottom-4 -left-4 hidden rounded-xl border border-sky-500/30 bg-background/95 p-3 shadow-xl backdrop-blur-sm md:block"
+            >
+              <p className="text-[10px] font-medium text-muted-foreground">Session WPM</p>
+              <p className="text-2xl font-semibold tracking-tight text-sky-700 dark:text-sky-300">87</p>
+              <div className="mt-1 flex h-6 items-end gap-0.5">
+                {[35, 52, 48, 64, 60, 76, 87].map((h, i) => (
+                  <div key={i} className="w-3 rounded-sm bg-sky-500/70" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
         </section>
 
+        {/* ── The Problem ── */}
+        <section className="pb-16 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10 text-center"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">The problem</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Most people who type for a living have{" "}
+              <span className="text-muted-foreground">no idea how they actually type.</span>
+            </h2>
+          </motion.div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {problems.map((p, i) => (
+              <motion.div
+                key={p.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+              >
+                <Card className="h-full rounded-2xl border-border/60 bg-card/70">
+                  <CardHeader>
+                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base">{p.title}</CardTitle>
+                    <CardDescription className="text-sm leading-6">{p.body}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="mt-6 text-center text-sm text-muted-foreground"
+          >
+            Typerr fixes all three — without changing how you work.
+          </motion.div>
+        </section>
+
+        {/* ── Trust strip ── */}
         <section className="pb-16 sm:pb-24">
           <Card className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm">
             <CardContent className="grid gap-5 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -303,297 +461,542 @@ export default function Home() {
           </Card>
         </section>
 
+        {/* ── M2: Bento feature grid ── */}
         <section id="features" className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Core Features</h2>
-            <p className="mt-3 text-muted-foreground">Measure live, understand mistakes, and train with clear AI coaching actions.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Gauge className="h-4 w-4 text-sky-600 dark:text-sky-300" />Real-time stats</CardTitle>
-                <CardDescription>Live WPM hero, mini trend bars, rhythm state, corrections/min, and tracking status.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-xl border border-border/70 bg-background/80 p-3">
-                  <div className="text-2xl font-semibold tracking-tight">87 <span className="text-xs font-medium text-muted-foreground">WPM</span></div>
-                  <div className="mt-2 flex h-8 items-end gap-1">
-                    {[35, 62, 58, 72, 64, 80, 87].map((h) => (
-                      <div key={h} className="w-full rounded-sm bg-sky-500/70" style={{ height: `${h}%` }} />
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10 max-w-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">Features</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Everything you need to improve.</h2>
+            <p className="mt-3 text-muted-foreground">Measure live, understand mistakes, and train with clear AI coaching actions — all in one desktop app.</p>
+          </motion.div>
 
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />Deep mistake audit</CardTitle>
-                <CardDescription>See recurring typo patterns, mistyped-to-suggested corrections, confidence, and count.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 rounded-xl border border-border/70 bg-background/80 p-3 text-sm">
-                  <div className="flex items-center justify-between"><span>definately -&gt; definitely</span><span className="text-muted-foreground">93%</span></div>
-                  <div className="flex items-center justify-between"><span>seperate -&gt; separate</span><span className="text-muted-foreground">88%</span></div>
-                  <div className="flex items-center justify-between"><span>teh -&gt; the</span><span className="text-muted-foreground">97%</span></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-sky-600 dark:text-sky-300" />AI mission and checklist</CardTitle>
-                <CardDescription>Get session missions, strengths and risks, drill words with hints, and a focused action list.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 rounded-xl border border-border/70 bg-background/80 p-3 text-sm">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-300" />4-minute ring-finger drill</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-300" />8 target words with hints</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-300" />2-point accuracy checklist</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section id="walkthrough" className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Product Walkthrough</h2>
-            <p className="mt-3 text-muted-foreground">A simple closed loop: track, analyze, practice, improve.</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-4">
-            {stepFlow.map((step, index) => (
-              <Card key={step.title} className="relative rounded-2xl border-border/60 bg-card/70">
+          {/* Row 1: large dashboard screenshot + mistake audit stacked */}
+          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <Card className="h-full overflow-hidden rounded-2xl border-border/60 bg-card/70">
                 <CardHeader>
-                  <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">Step {index + 1}</div>
-                  <CardTitle className="flex items-center gap-2">
-                    <step.icon className="h-4 w-4 text-sky-600 dark:text-sky-300" />
-                    {step.title}
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Gauge className="h-4 w-4 text-sky-600 dark:text-sky-300" />
+                    Real-time KPI dashboard
                   </CardTitle>
-                  <CardDescription>{step.body}</CardDescription>
+                  <CardDescription>Live WPM, rhythm state, corrections/min, and tracking status — always visible while you work.</CardDescription>
                 </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-hidden rounded-b-2xl border-t border-border/60">
+                    <Image
+                      src="/demo-app-dashboard.png"
+                      alt="Typerr full analytics dashboard"
+                      width={720}
+                      height={420}
+                      className="w-full object-cover"
+                    />
+                  </div>
+                </CardContent>
               </Card>
+            </motion.div>
+
+            <div className="flex flex-col gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <Card className="rounded-2xl border-border/60 bg-card/70">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                      Deep mistake audit
+                    </CardTitle>
+                    <CardDescription>Recurring typos ranked by confidence. Know exactly which words trip you up and how often.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 rounded-xl border border-border/70 bg-background/80 p-3 text-sm">
+                      {[["definately → definitely", "93%"], ["seperate → separate", "88%"], ["teh → the", "97%"]].map(([err, conf]) => (
+                        <div key={err} className="flex items-center justify-between">
+                          <span className="font-mono text-xs">{err}</span>
+                          <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px]">{conf}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <Card className="rounded-2xl border-border/60 bg-card/70">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Sparkles className="h-4 w-4 text-sky-600 dark:text-sky-300" />
+                      AI session missions
+                    </CardTitle>
+                    <CardDescription>Focused coaching actions generated from your latest snapshot — no guesswork required.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-1.5 rounded-xl border border-border/70 bg-background/80 p-3 text-sm">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-sky-500" />4-min ring-finger drill</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-sky-500" />8 target words with hints</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-sky-500" />2-point accuracy checklist</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Row 2: three metric cards */}
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {[
+              { icon: Activity, label: "WPM & rhythm", value: "87 WPM", sub: "Steady rhythm", color: "text-sky-600 dark:text-sky-300", bars: [35, 52, 48, 64, 60, 76, 87] },
+              { icon: Target, label: "Corrections/min", value: "2.4", sub: "↓ from 4.1 last week", color: "text-emerald-600 dark:text-emerald-400", bars: [80, 72, 68, 60, 55, 50, 42] },
+              { icon: ListChecks, label: "Session score", value: "84 / 100", sub: "Tracking health: good", color: "text-sky-600 dark:text-sky-300", bars: [60, 65, 70, 72, 78, 82, 84] },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35, delay: i * 0.08 }}
+              >
+                <Card className="rounded-2xl border-border/60 bg-card/70">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
+                    </div>
+                    <p className={`mt-1 text-2xl font-semibold tracking-tight ${item.color}`}>{item.value}</p>
+                    <p className="mb-2 text-[11px] text-muted-foreground">{item.sub}</p>
+                    <div className="flex h-7 items-end gap-0.5">
+                      {item.bars.map((h, j) => (
+                        <div key={j} className="flex-1 rounded-sm bg-sky-500/60" style={{ height: `${h}%` }} />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </section>
 
-        <section className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Feature Deep Dives</h2>
-            <p className="mt-3 text-muted-foreground">Everything in one dashboard: live KPIs, mistake intelligence, and practical AI coaching.</p>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Activity className="h-4 w-4 text-sky-600 dark:text-sky-300" />WPM and KPI rhythm</CardTitle>
-                <CardDescription>Session Avg WPM, rhythm state, corrections/min, tracking status, and refresh interval controls.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 px-3 py-2"><span>Rhythm</span><span className="text-sky-700 dark:text-sky-300">Steady</span></div>
-                  <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 px-3 py-2"><span>Corrections/min</span><span>2.4</span></div>
-                  <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 px-3 py-2"><span>Tracking</span><span className="text-sky-700 dark:text-sky-300">Live</span></div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* ── M2: Timeline walkthrough ── */}
+        <section id="walkthrough" className="pb-16 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-12 max-w-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">How it works</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">A closed loop. No habit changes required.</h2>
+            <p className="mt-3 text-muted-foreground">Typerr works in the background while you do your actual job. The loop tightens automatically.</p>
+          </motion.div>
 
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Target className="h-4 w-4 text-amber-600 dark:text-amber-400" />Top mistakes intelligence</CardTitle>
-                <CardDescription>Dictionary-aware correction suggestions help you fix repeat errors with high confidence.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">occurence -&gt; occurrence <span className="text-muted-foreground">(x11)</span></div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">adress -&gt; address <span className="text-muted-foreground">(x8)</span></div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">enviroment -&gt; environment <span className="text-muted-foreground">(x6)</span></div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="relative">
+            {/* Connector line — desktop only */}
+            <div className="absolute left-0 right-0 top-9 hidden h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent md:block" />
 
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ListChecks className="h-4 w-4 text-sky-600 dark:text-sky-300" />Drill words and actions</CardTitle>
-                <CardDescription>Session mission, word drills with hints, and action checklist with estimated time.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">Mission: stabilize pace above 80 WPM for 6 minutes</div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">Drill words: occurrence, rhythm, separate</div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 p-2">Checklist: 2 actions, 9 min total</div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid gap-8 md:grid-cols-4 md:gap-4">
+              {stepFlow.map((step, index) => (
+                <motion.div
+                  key={step.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="flex flex-col items-start md:items-center md:text-center"
+                >
+                  {/* Number bubble */}
+                  <div className="relative z-10 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-sky-500/30 bg-card shadow-sm">
+                    <span className="absolute -top-2.5 -right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-[10px] font-bold text-white">
+                      {index + 1}
+                    </span>
+                    <step.icon className="h-6 w-6 text-sky-600 dark:text-sky-300" />
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold tracking-tight">{step.title}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{step.body}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
+
         <section className="pb-16 sm:pb-24">
-          <Card className="rounded-2xl border-border/60 bg-card/60 backdrop-blur-sm">
-            <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="rounded-2xl border-sky-500/20 bg-gradient-to-r from-sky-500/8 to-cyan-500/5 backdrop-blur-sm">
+            <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-lg font-medium">Ready for your first analysis report?</p>
-                <p className="text-sm text-muted-foreground">Install Typerr, complete one real work session, then run your first AI mission.</p>
+                <p className="text-lg font-semibold">Ready for your first analysis report?</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">Install Typerr, complete one real work session, then run your first AI mission.</p>
               </div>
-              <Button className="bg-sky-600 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400" render={<a href="#downloads" />}>
-                Go to Downloads
-                <ChevronRight className="h-4 w-4" />
+              <Button className="shrink-0 bg-sky-600 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400" nativeButton={false} render={<a href="#downloads" />}>
+                Get Typerr free
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
         </section>
 
+        {/* ── M3: Progress heatmap ── */}
         <section className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Progress and Consistency</h2>
-            <p className="mt-3 text-muted-foreground">Use the 12-week heatmap and improvement focus card to sustain practice and avoid random drilling.</p>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LineChart className="h-4 w-4 text-sky-600 dark:text-sky-300" />12-week activity heatmap</CardTitle>
-                <CardDescription>Visual consistency cues help you keep momentum and spot off-weeks early.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-12 gap-1 rounded-xl border border-border/70 bg-background/70 p-3">
-                  {Array.from({ length: 84 }, (_, idx) => (
-                    <div
-                      key={idx}
-                      className="aspect-square rounded-sm"
-                      style={{
-                        background:
-                          idx % 7 === 0
-                            ? "rgba(14, 165, 233, 0.55)"
-                            : idx % 5 === 0
-                              ? "rgba(14, 165, 233, 0.35)"
-                              : "rgba(148, 163, 184, 0.24)",
-                      }}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10 max-w-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">Progress</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">See momentum build week by week.</h2>
+            <p className="mt-3 text-muted-foreground">The 12-week heatmap and improvement focus card keep you on track without random drilling.</p>
+          </motion.div>
 
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Target className="h-4 w-4 text-amber-600 dark:text-amber-400" />Improvement focus</CardTitle>
-                <CardDescription>Prioritized guidance based on your latest snapshot versus previous sessions.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="rounded-lg border border-border/70 bg-background/80 p-2">Stabilize rhythm for 2 x 4-minute blocks</li>
-                  <li className="rounded-lg border border-border/70 bg-background/80 p-2">Reduce repeated e/i swaps in common words</li>
-                  <li className="rounded-lg border border-border/70 bg-background/80 p-2">Target 1.5 corrections/min threshold</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section id="privacy" className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Privacy and Trust</h2>
-            <p className="mt-3 text-muted-foreground">Typerr is privacy-conscious and local-first. You keep control of your typing data.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-sky-600 dark:text-sky-300" />What Typerr does</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>- Processes typing performance signals locally for real-time KPIs and feedback.</li>
-                  <li>- Builds mistake patterns and practice recommendations from your sessions.</li>
-                  <li>- Presents AI mission, drill words, and checklist actions in one dashboard.</li>
-                </ul>
-              </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-border/60 bg-card/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LockKeyhole className="h-4 w-4 text-amber-600 dark:text-amber-400" />What Typerr does not do</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>- Does not market itself as a raw keystroke export tool.</li>
-                  <li>- Does not require you to leave your normal workflow to run synthetic typing tests.</li>
-                  <li>- Only requests keyboard accessibility permission to enable live tracking and coaching signals.</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section id="downloads" className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">Download Typerr</h2>
-            <p className="mt-3 text-muted-foreground">Choose your platform and start your first analysis report today.</p>
-          </div>
-          <Card className="mb-4 rounded-2xl border-border/60 bg-card/60">
-            <CardContent className="flex flex-wrap items-center gap-3 py-2 text-sm text-muted-foreground">
-              <Badge variant="outline">Version: {versionLabel}</Badge>
-              <Badge variant="outline">Release date: {releaseDateLabel}</Badge>
-              <Badge variant="outline">Channel: latest artifacts</Badge>
-            </CardContent>
-          </Card>
-          <div className="grid gap-4 md:grid-cols-3">
-            {resolvedDownloads.map((item) => (
-              <Card key={item.os} className="rounded-2xl border-border/60 bg-card/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <item.icon className="h-4 w-4 text-sky-600 dark:text-sky-300" />
-                    {item.os}
-                  </CardTitle>
-                  <CardDescription>Desktop installer</CardDescription>
+          <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <Card className="rounded-2xl border-border/60 bg-card/70">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <LineChart className="h-4 w-4 text-sky-600 dark:text-sky-300" />
+                      12-week activity heatmap
+                    </CardTitle>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                      🔥 14-day streak
+                    </Badge>
+                  </div>
+                  <CardDescription>Visual consistency cues help you spot off-weeks early and keep momentum.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button
-                    className="h-10 w-full bg-sky-600 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400"
-                    render={<a href={item.href} />}
-                  >
-                    <Download className="h-4 w-4" />
-                    {item.label}
-                  </Button>
+                  {/* Month labels */}
+                  <div className="mb-1 grid grid-cols-12 gap-1 px-0.5 text-[9px] text-muted-foreground">
+                    {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m) => (
+                      <div key={m} className="text-center">{m}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-12 gap-1 rounded-xl border border-border/70 bg-background/70 p-3">
+                    {Array.from({ length: 84 }, (_, idx) => {
+                      const intensity = idx > 60 ? 0.7 : idx > 40 ? 0.5 : idx % 7 === 0 ? 0.55 : idx % 5 === 0 ? 0.35 : 0.18;
+                      return (
+                        <div
+                          key={idx}
+                          className="aspect-square rounded-sm transition-opacity hover:opacity-80"
+                          style={{ background: `rgba(14,165,233,${intensity})` }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <div className="h-2.5 w-2.5 rounded-sm" style={{ background: "rgba(14,165,233,0.18)" }} />Less
+                    </div>
+                    <div className="flex gap-0.5">
+                      {[0.25,0.4,0.55,0.7].map((o) => (
+                        <div key={o} className="h-2.5 w-2.5 rounded-sm" style={{ background: `rgba(14,165,233,${o})` }} />
+                      ))}
+                    </div>
+                    <span>More</span>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <Card className="h-full rounded-2xl border-border/60 bg-card/70">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Target className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                    Improvement focus
+                  </CardTitle>
+                  <CardDescription>Prioritized guidance from your latest snapshot vs previous sessions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-3 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2">
+                    <p className="text-[10px] font-medium text-muted-foreground">WPM trend</p>
+                    <p className="text-xl font-semibold text-sky-600 dark:text-sky-300">87 → 104 <span className="text-xs text-emerald-600 dark:text-emerald-400">+18%</span></p>
+                  </div>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2 rounded-lg border border-border/70 bg-background/80 p-2">
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
+                      Stabilize rhythm for 2 × 4-min blocks
+                    </li>
+                    <li className="flex items-start gap-2 rounded-lg border border-border/70 bg-background/80 p-2">
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
+                      Reduce e/i swaps in common words
+                    </li>
+                    <li className="flex items-start gap-2 rounded-lg border border-border/70 bg-background/80 p-2">
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
+                      Target 1.5 corrections/min
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </section>
 
-        <section className="pb-16 sm:pb-24">
-          <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight">FAQ</h2>
-          </div>
-          <div className="space-y-3">
-            {faqs.map((item) => (
-              <details key={item.question} className="rounded-xl border border-border/60 bg-card/70 p-4">
-                <summary className="cursor-pointer list-none text-sm font-medium text-foreground">{item.question}</summary>
-                <p className="pt-3 text-sm text-muted-foreground">{item.answer}</p>
-              </details>
-            ))}
+        {/* ── M3: Privacy ── */}
+        <section id="privacy" className="pb-16 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10 text-center"
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/20">
+              <ShieldCheck className="h-7 w-7 text-sky-600 dark:text-sky-300" />
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">Privacy</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Your keystrokes stay on your machine.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-muted-foreground">Typerr is local-first by design. Processing happens on-device. Nothing raw ever leaves.</p>
+          </motion.div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <motion.div
+              initial={{ opacity: 0, x: -16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <Card className="h-full rounded-2xl border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    What Typerr does
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 text-sm">
+                    {[
+                      "Processes typing signals locally — WPM, rhythm, corrections, accuracy.",
+                      "Builds mistake patterns from your own sessions, stored on-device.",
+                      "Generates AI coaching missions from your local snapshot.",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-muted-foreground">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <Card className="h-full rounded-2xl border-border/60 bg-card/70">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                    What Typerr never does
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 text-sm">
+                    {[
+                      "Export raw keystrokes or send them to any server.",
+                      "Require you to leave your workflow for synthetic typing tests.",
+                      "Store or transmit the content of what you type.",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-muted-foreground">
+                        <X className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </section>
 
-        <section className="pb-6">
-          <Card className="rounded-2xl border-border/60 bg-[linear-gradient(120deg,rgba(14,165,233,0.2),rgba(34,211,238,0.14))]">
-            <CardContent className="flex flex-col gap-4 py-5 text-center sm:items-center">
-              <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">Improve typing speed and accuracy with actionable coaching.</h2>
-              <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">Measure live, understand mistakes, train with intent, and improve consistently with Typerr.</p>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                {resolvedDownloads.map((item) => (
-                  <Button
-                    key={`final-${item.os}`}
-                    variant="outline"
-                    className="border-sky-500/40 bg-background/85"
-                    render={<a href={item.href} />}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
+        {/* ── M4: Downloads ── */}
+        <section id="downloads" className="pb-16 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">Downloads</p>
+            <div className="mt-2 flex flex-wrap items-end gap-4">
+              <h2 className="text-3xl font-semibold tracking-tight">Download Typerr</h2>
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-xl font-semibold tabular-nums text-sky-600 dark:text-sky-300">{versionLabel}</span>
+                <Badge variant="outline" className="border-border/60 text-muted-foreground text-[11px]">{releaseDateLabel}</Badge>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="mt-2 text-muted-foreground">Free download. No account required. Start improving in your first session.</p>
+          </motion.div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {resolvedDownloads.map((item, i) => {
+              const isMac = item.os === "macOS";
+              return (
+                <motion.div
+                  key={item.os}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.35, delay: i * 0.08 }}
+                >
+                  <Card className={`relative h-full rounded-2xl transition-shadow hover:shadow-md ${isMac ? "border-sky-500/40 ring-1 ring-sky-500/30 bg-card/70" : "border-border/60 bg-card/70"}`}>
+                    {isMac && (
+                      <div className="absolute -top-2.5 left-4">
+                        <Badge className="bg-sky-500 text-white text-[10px] px-2 py-0.5">Recommended</Badge>
+                      </div>
+                    )}
+                    <CardHeader className="pt-6">
+                      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-xl ${isMac ? "bg-sky-500/10 ring-1 ring-sky-500/20" : "bg-muted"}`}>
+                        <item.icon className={`h-5 w-5 ${isMac ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`} />
+                      </div>
+                      <CardTitle className="text-base">{item.os}</CardTitle>
+                      <CardDescription>
+                        {item.os === "macOS" && ".dmg universal installer"}
+                        {item.os === "Windows" && ".exe setup installer"}
+                        {item.os === "Linux" && ".AppImage portable"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button
+                        className={`h-10 w-full ${isMac ? "bg-sky-600 text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}
+                        nativeButton={false} render={<a href={item.href} />}
+                      >
+                        <Download className="h-4 w-4" />
+                        {item.label}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
         </section>
 
-        <footer className="pt-8 text-center text-xs text-muted-foreground">Typerr {year}. Built for measurable typing improvement.</footer>
+        {/* ── M3: FAQ accordion ── */}
+        <section className="pb-16 sm:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mb-10 max-w-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-sky-600 dark:text-sky-400">FAQ</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Common questions.</h2>
+          </motion.div>
+          <div className="space-y-2">
+            {faqs.map((item, i) => (
+              <motion.div
+                key={item.question}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: i * 0.06 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className={`w-full rounded-xl border px-5 py-4 text-left transition-colors ${openFaq === i ? "border-sky-500/30 bg-sky-500/5" : "border-border/60 bg-card/70 hover:bg-card"}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium">{item.question}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
+                  </div>
+                  {openFaq === i && (
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.answer}</p>
+                  )}
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── M4: Final CTA ── */}
+        <section className="pb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="relative overflow-hidden rounded-3xl border border-sky-500/20 px-6 py-14 text-center sm:px-12"
+            style={{ background: "linear-gradient(135deg, rgba(14,165,233,0.18) 0%, rgba(34,211,238,0.12) 50%, rgba(99,102,241,0.1) 100%)" }}
+          >
+            {/* Decorative blobs inside banner */}
+            <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-sky-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/15 ring-1 ring-sky-500/30">
+                <Keyboard className="h-6 w-6 text-sky-600 dark:text-sky-300" />
+              </div>
+              <div>
+                <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+                  Stop guessing.<br />
+                  <span className="bg-gradient-to-r from-sky-500 to-cyan-400 bg-clip-text text-transparent">Start improving.</span>
+                </h2>
+                <p className="mx-auto mt-3 max-w-md text-muted-foreground">
+                  Install Typerr, do one real work session, and you&apos;ll have your first analysis report before lunch.
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-3 sm:flex-row">
+                <Button
+                  size="lg"
+                  className="h-12 bg-sky-600 px-8 text-base text-white hover:bg-sky-500 dark:bg-sky-500 dark:text-black dark:hover:bg-sky-400"
+                  nativeButton={false} render={<a href={resolvedDownloads[0]?.href ?? releaseFallback} />}
+                >
+                  <Apple className="h-5 w-5" />
+                  Download for macOS
+                </Button>
+                <Button size="lg" variant="outline" className="h-12 border-border/60 bg-background/60 px-6 text-base backdrop-blur" nativeButton={false} render={<a href="#downloads" />}>
+                  All platforms
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Free. No account. Works on macOS, Windows, and Linux.</p>
+            </div>
+          </motion.div>
+        </section>
+
+        <footer className="flex flex-col items-center gap-2 pt-10 pb-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <Keyboard className="h-3 w-3" />
+            </div>
+            <span className="font-medium text-foreground">Typerr</span>
+          </div>
+          <p>© {year} · Built for measurable typing improvement · Local-first, privacy-conscious</p>
+        </footer>
 
         <script
           type="application/ld+json"
